@@ -22,7 +22,7 @@ typedef enum {
 // Imp VM functions
 void initVM();
 void freeVM();
-InterpretResult interpret(Chunk* chunk);
+InterpretResult interpret(const char* source);
 
 // Stack funcs
 void push(Value value);

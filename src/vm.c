@@ -1,6 +1,7 @@
 #include "common.h"
 #include "vm.h"
 #include "debug.h"
+#include "compiler.h"
 #include <stdio.h>
 
 VM vm;
@@ -32,7 +33,7 @@ Value pop(){
 }
 
 static InterpretResult run() {
-printf("welcome to run\n");
+printf("\nwelcome to this whole new world of compilers\n\n");
 // Some imp funcs 
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
@@ -41,9 +42,7 @@ printf("welcome to run\n");
         double b = pop();\
         double a = pop();\
         push(a op b);\
-
     } while (false)
-
 // Executing instructions
 #ifndef DEBUG_TRACE_EXECUTION
     printf("    ");
@@ -66,7 +65,7 @@ printf("welcome to run\n");
                 break;
             }
 
-            case OP_NEGATE:push(-pop());break;
+            case OP_NEGATE:   push(-pop());break;
             case OP_ADD:      BINARY_OP(+); break;
             case OP_SUBTRACT: BINARY_OP(-); break;
             case OP_MULTIPLY: BINARY_OP(*); break;
@@ -84,10 +83,23 @@ printf("welcome to run\n");
     }
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef BINARY_OP
 }
 
-InterpretResult interpret(Chunk* chunk){
-    vm.chunk = chunk;
+InterpretResult interpret(const char* source){
+    Chunk chunk;
+    initChunk(&chunk);
+
+    if (!compile(source, &chunk)) {
+        freeChunk(&chunk);
+        return INTERPRET_COMPILE_ERROR;
+    }
+
+    vm.chunk = &chunk;
     vm.ip = vm.chunk->code;
-    return run();
+
+    InterpretResult result = run();
+
+    freeChunk(&chunk);
+    return result;
 }
