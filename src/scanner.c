@@ -76,7 +76,7 @@ static Token string() {
         advance();
     }
 
-    if (isAtEnd()) return errorToken("Unterminated string at line");
+    if (isAtEnd()) return errorToken(("Unterminated string at line %d", *scanner.line));
 
     // the closing quote
     advance();
@@ -119,6 +119,27 @@ static TokenType identifierType(){
                 }
             }
             break;
+
+/*
+
+String Interpolation
+
+Sample -> f"1 + 2 = {1+2}"
+
+if we see an 'f' before '"' then we will just continue
+making a normal string token. We will then probably come
+across a '{'. This is when we stop the current string, 
+we then continue making normal tokens to add the command.
+When we see '}' then we stop making commands, and continue
+making a normal string.
+
+During parsing, the entire command recorded will be
+treated as a ||-> FUNCTION <-||
+
+this will return a result which will be added
+as a string into the previous strings
+
+*/
 
         case 't':
             if (scanner.current - scanner.start > 1) {
