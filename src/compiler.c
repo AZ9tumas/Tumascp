@@ -70,12 +70,12 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
     emitByte(byte2);
 }
 
-static void endCompiler() {
-    emitReturn();
-}
-
 static void emitReturn() {
     emitByte(OP_RETURN);
+}
+
+static void endCompiler() {
+    emitReturn();
 }
 
 static void expression(){
