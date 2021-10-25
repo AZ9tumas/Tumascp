@@ -21,6 +21,7 @@ static Token makeToken(TokenType type) {
     token.start = scanner.start;
     token.length = (int)(scanner.current - scanner.start);
     token.line = scanner.line;
+    //printf("line: %d start: %s length: %d\n", token.line, token.start, token.length);
     return token;
 }
 
@@ -36,7 +37,7 @@ static Token errorToken(const char* message) {
 static bool isAlpha(char c){return (c>='a'&&c<='z')||(c>='A'&&c<='z')||c=='_';}
 static char peek(){return*scanner.current;}
 static bool isAtEnd(){return*scanner.current=='\0';}
-static char peekNext(){return!isAtEnd()?'\0':scanner.current[1];}
+static char peekNext(){return isAtEnd()?'\0':scanner.current[1];}
 static bool isDigit(char c){return c>='0'&&c<='9';}
 static TokenType checkKeyword(int start, int length, const char* rest, TokenType type) {return scanner.current-scanner.start==start+length&&memcmp(scanner.start + start, rest, length)==0?type:TOKEN_IDENTIFIER;}
 
@@ -70,17 +71,36 @@ static bool match(char expected) {
     return true;
 }
 
-static Token string() {
-    while (peek()!='"'&&!isAtEnd()){
+static Token string(bool interpolate, char quoteType) {
+    while (peek()!=quoteType&&!isAtEnd()){
         if (peek()=='\n')scanner.line++;
         advance();
+        if (interpolate&&peek()=='{'){advance();return makeToken(TOKEN_STRING);}
     }
 
-    if (isAtEnd()) return errorToken(("Unterminated string at line %d", *scanner.line));
-
+    if (isAtEnd())return errorToken("Unterminated string");
+    
     // the closing quote
     advance();
-    return makeToken(TOKEN_STRING);
+    printf("start: %scurr: %s\n", scanner.start, scanner.current);
+    if (!interpolate)return makeToken(TOKEN_STRING);
+    //return makeInterToken();
+}
+
+static TokenType Interpolation(){
+    // f"hello {1} hi"
+    // u are rn at '"'
+
+    // Start of the string
+    char quote = peek();
+    advance();
+
+    Token token = string(true, quote);
+    if (&token!=NULL&&token.type==TOKEN_ERROR){
+        scanner.start = token.start;
+        return TOKEN_ERROR;
+    };
+    return TOKEN_INTERSTRING;
 }
 
 static Token number(){
@@ -91,6 +111,7 @@ static Token number(){
         advance();
         while(isDigit(peek()))advance();
     }
+    //printf("number: %s", scanner.start);
     return makeToken(TOKEN_NUMBER);
 }
 
@@ -111,14 +132,33 @@ static TokenType identifierType(){
         case 'w': return checkKeyword(1, 4, "hile", TOKEN_WHILE);
 
         // Multiple keywords
-        case 'f': 
+        case 'f':
             if (scanner.current - scanner.start>1){
                 switch (scanner.start[1]){
                     case 'a':return checkKeyword(2,3,"lse", TOKEN_FALSE);
                     case 'o':return checkKeyword(2,1,"r", TOKEN_FOR);
                 }
             }
+            //if(scanner.start[1] == '"'){return Interpolation();}
             break;
+
+        case 't':
+            if (scanner.current - scanner.start > 1) {
+                switch (scanner.start[1]) {
+                case 'h': return checkKeyword(2, 2, "is", TOKEN_THIS);
+                case 'r': return checkKeyword(2, 2, "ue", TOKEN_TRUE);
+                }
+            }
+            break;
+    }
+    return TOKEN_IDENTIFIER;
+}
+
+static Token identifier(){
+    while(isAlpha(peek())||isDigit(peek()))advance();
+    TokenType type = identifierType();
+    return type==TOKEN_ERROR?errorToken(scanner.start):makeToken(type);
+}
 
 /*
 
@@ -141,23 +181,6 @@ as a string into the previous strings
 
 */
 
-        case 't':
-            if (scanner.current - scanner.start > 1) {
-                switch (scanner.start[1]) {
-                case 'h': return checkKeyword(2, 2, "is", TOKEN_THIS);
-                case 'r': return checkKeyword(2, 2, "ue", TOKEN_TRUE);
-                }
-            }
-            break;
-    }
-    return TOKEN_IDENTIFIER;
-}
-
-static Token identifier(){
-    while(isAlpha(peek())||isDigit(peek()))advance();
-    return makeToken(identifierType());
-}
-
 Token scanToken(){
     skipWhiteToken();
     scanner.start = scanner.current;
@@ -166,7 +189,7 @@ Token scanToken(){
     char c = advance();
     if (isAlpha(c))return identifier();
     if (isDigit(c))return number();
-    
+
     switch (c) {
         case '(': return makeToken(TOKEN_LEFT_PAREN);
         case ')': return makeToken(TOKEN_RIGHT_PAREN);
@@ -191,7 +214,8 @@ Token scanToken(){
         case '>':
             return makeToken(
                 match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
-        case '"':return string();
+        case '"':return string(false, '"');
+        case '\'': return string(false, '\'');
     }
 
     return errorToken("Unexpected character");
