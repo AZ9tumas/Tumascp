@@ -1,5 +1,5 @@
-tumascp: chunk.o main.o memory.o debug.o value.o vm.o scanner.o compiler.o
-	gcc chunk.o main.o memory.o debug.o value.o vm.o scanner.o compiler.o -o tumascp
+tumascp: chunk.o main.o memory.o debug.o value.o vm.o scanner.o compiler.o object.o table.o
+	gcc chunk.o main.o memory.o debug.o value.o vm.o scanner.o compiler.o object.o table.o -o tumascp
 	rm *.o
 
 debug.o: debug.h debug.c
@@ -25,3 +25,9 @@ scanner.o: scanner.c scanner.h
 
 compiler.o: compiler.c compiler.h
 	gcc -c compiler.c
+
+object.o: object.c object.h
+	gcc -c object.c
+
+table.o: table.c table.h
+	gcc -c table.c
