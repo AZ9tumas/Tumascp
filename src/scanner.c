@@ -82,7 +82,7 @@ static Token string(bool interpolate, char quoteType) {
     
     // the closing quote
     advance();
-    printf("start: %scurr: %s\n", scanner.start, scanner.current);
+    //printf("start: %scurr: %s\n", scanner.start, scanner.current);
     if (!interpolate)return makeToken(TOKEN_STRING);
     //return makeInterToken();
 }
@@ -122,6 +122,7 @@ static TokenType identifierType(){
         case 'c': return checkKeyword(1, 4, "lass", TOKEN_CLASS);
         case 'd': return checkKeyword(1, 2, "ef", TOKEN_FUNC);
         case 'e': return checkKeyword(1, 3, "lse", TOKEN_ELSE);
+        case 'g': return checkKeyword(1, 5, "lobal", TOKEN_GVAR);
         case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
         case 'n': return checkKeyword(1, 2, "il", TOKEN_NIL);
         case 'o': return checkKeyword(1, 1, "r", TOKEN_OR);

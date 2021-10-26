@@ -1,0 +1,14 @@
+global a = 12
+global b = 14
+
+global c = 34
+
+print a + b + c
+
+global space = " "
+
+global first = "my" + space + "lang"
+global second = 'is' + space + 'ready'
+
+print first + space + second
+
