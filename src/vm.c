@@ -141,6 +141,14 @@ static InterpretResult run() {
                 break;
             }
 
+            case OP_CONSTANT_LONG:
+                // do something
+                Value constant = READ_CONSTANT();
+                
+                // constant part 1:
+                //push()
+
+
             case OP_NEGATE:
                 if (!IS_NUMBER(peek(0))){
                     runtimeError("Operand must be a number.");
@@ -172,6 +180,18 @@ static InterpretResult run() {
                 runtimeError("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
                 }
+                break;
+            }
+
+            case OP_GET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                push(vm.stack[slot]); 
+                break;
+            }
+
+            case OP_SET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                vm.stack[slot] = peek(0);
                 break;
             }
 

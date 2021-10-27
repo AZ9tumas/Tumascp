@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "compiler.h"
@@ -40,7 +41,19 @@ typedef struct {
   Precedence precedence;
 } ParseRule;
 
+typedef struct {
+    Token name;
+    int depth;
+} Local;
+
+typedef struct {
+    Local locals[UINT8_COUNT];
+    int localCount;
+    int scopeDepth;
+} Compiler;
+
 Parser parser;
+Compiler* current = NULL;
 Chunk* compilingChunk;
 
 static Chunk* currentChunk(){
@@ -99,6 +112,11 @@ static bool match(TokenType type) {
     return true;
 }
 
+static bool rawMatch(TokenType type){
+    if (!check(type))return false;
+    return true;
+}
+
 static void emitByte(uint8_t byte) {
     writeChunk(currentChunk(), byte, parser.previous.line);
 }
@@ -132,6 +150,12 @@ static void emitConstant(Value Value){
     emitBytes(OP_CONSTANT, makeConstant(Value));
 }
 
+static void initCompiler(Compiler* compiler) {
+    compiler->localCount = 0;
+    compiler->scopeDepth = 0;
+    current = compiler;
+}
+
 static void parsePrecedence(Precedence precedence) {
     advance();
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
@@ -159,12 +183,62 @@ static uint8_t identifierConstant(Token* name) {
     return makeConstant(OBJ_VAL(copyString(name->start,name->length)));
 }
 
-static uint8_t parseVariable(const char* errorMessage) {
+static bool identifiersEqual(Token* a, Token* b) {
+    if (a->length != b->length) return false;
+    return memcmp(a->start, b->start, a->length) == 0;
+}
+
+static int resolveLocal(Compiler* compiler, Token* name) {
+    for (int i = compiler->localCount - 1; i >= 0; i--) {
+        Local* local = &compiler->locals[i];
+        if (identifiersEqual(name, &local->name)) {
+            if (local->depth == -1) {
+                error("Can't read local variable in its own initializer.");
+            }
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static void addLocal(Token name) {
+
+    if (current->localCount == UINT8_COUNT) {
+        error("Too many local variables in function.");
+        return;
+    }
+
+    Local* local = &current->locals[current->localCount++];
+    local->name = name;
+    local->depth = -1;
+}
+
+static void declareVariable(bool localvar) {
+    if (current->scopeDepth == 0 && !localvar) return;
+
+    Token* name = &parser.previous;
+    addLocal(*name);
+}
+
+static uint8_t parseVariable(const char* errorMessage, bool localvar) {
     consume(TOKEN_IDENTIFIER, errorMessage);
+    
+    declareVariable(localvar);
+    if (current->scopeDepth > 0 || localvar)return 0;
     return identifierConstant(&parser.previous);
 }
 
-static void defineVariable(uint8_t global) {
+static void markInitialized() {
+    current->locals[current->localCount - 1].depth = current->scopeDepth;
+}
+
+static void defineVariable(uint8_t global, bool islocalvar) {
+
+    if (current->scopeDepth>0 || islocalvar){
+        markInitialized();
+        return;
+    }
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
@@ -175,6 +249,19 @@ static void endCompiler() {
         disassembleChunk(currentChunk(), "stdin code");
     }
 #endif
+}
+
+static void beginScope() {
+    current->scopeDepth++;
+}
+
+static void endScope() {
+    current->scopeDepth--;
+
+    while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
+        emitByte(OP_POP);
+        current->localCount--;
+    }
 }
 
 static void binary(bool canAssign){
@@ -210,8 +297,19 @@ static void expression(){
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
+static void block() {
+    while (!check(TOKEN_END) && !check(TOKEN_EOF)) {
+        declaration();
+    }
+
+    consume(TOKEN_END, "Expect keyword 'end' after block.");
+}
+
 static void varDeclaration() {
-    uint8_t global = parseVariable("Expect variable name.");
+    bool islocalvar = match(TOKEN_VAR);
+    uint8_t global = parseVariable("Expected variable name.", islocalvar);
+    
+    // When it's a local var, global = 0
 
     if (match(TOKEN_EQUAL)) {
         expression();
@@ -220,14 +318,25 @@ static void varDeclaration() {
     }
     //consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
-    defineVariable(global);
+    defineVariable(global, islocalvar);
 }
 
 static void expressionStatement() {
     expression();
     //consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
-    if (parser.current.type == TOKEN_SEMICOLON)advance();
+    //if (parser.current.type == TOKEN_SEMICOLON)advance();
     emitByte(OP_POP);
+}
+
+static void ifStatement() {
+    //consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+    expression();
+    consume(TOKEN_COLON, "Expect ':' after if statement condition.");
+
+    int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    statement();
+
+    patchJump(thenJump);
 }
 
 static void printStatement() {
@@ -240,7 +349,7 @@ static void synchronize() {
   parser.panicMode = false;
 
     while (parser.current.type != TOKEN_EOF) {
-        if (parser.previous.type == TOKEN_SEMICOLON) return;
+        //if (parser.previous.type == TOKEN_SEMICOLON) return;
         switch (parser.current.type) {
         case TOKEN_CLASS:
         case TOKEN_FUNC:
@@ -263,10 +372,9 @@ static void synchronize() {
 
 static void declaration() {
 
-    if (match(TOKEN_GVAR)){
+    if (match(TOKEN_GVAR) || rawMatch(TOKEN_VAR)){
         varDeclaration();
-    }
-    else {
+    } else {
         statement();
     }
 
@@ -276,6 +384,13 @@ static void declaration() {
 static void statement() {
     if (match(TOKEN_PRINT)) {
         printStatement();
+    } else if (match(TOKEN_IF)){
+        ifStatement();
+    }
+     else if (match(TOKEN_BSTART) || match(TOKEN_COLON)){
+        beginScope();
+        block();
+        endScope();
     } else {
         expressionStatement();
     }
@@ -317,12 +432,22 @@ static void string(bool canAssign){
 }
 
 static void namedVariable(Token name, bool canAssign) {
-    uint8_t arg = identifierConstant(&name);
+    uint8_t getOp, setOp;
+    int arg = resolveLocal(current, &name);
+
+    if (arg != -1) {
+        getOp = OP_GET_LOCAL;
+        setOp = OP_SET_LOCAL;
+    } else {
+        arg = identifierConstant(&name);
+        getOp = OP_GET_GLOBAL;
+        setOp = OP_SET_GLOBAL;
+    }
     if (canAssign && match(TOKEN_EQUAL)) {
         expression();
-        emitBytes(OP_SET_GLOBAL, arg);
+        emitBytes(setOp, (uint8_t)arg);
     } else {
-        emitBytes(OP_GET_GLOBAL, arg);
+        emitBytes(getOp, (uint8_t)arg);
     }
 }
 
@@ -394,6 +519,8 @@ static ParseRule* getRule(TokenType type) {
 
 bool compile(const char* source, Chunk* chunk) {
     initScanner(source);
+    Compiler compiler;
+    initCompiler(&compiler);
     compilingChunk = chunk;
 
     // Initialize fields of 'parser'

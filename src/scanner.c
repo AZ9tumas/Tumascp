@@ -121,7 +121,6 @@ static TokenType identifierType(){
         case 'a': return checkKeyword(1, 2, "nd", TOKEN_AND);
         case 'c': return checkKeyword(1, 4, "lass", TOKEN_CLASS);
         case 'd': return checkKeyword(1, 2, "ef", TOKEN_FUNC);
-        case 'e': return checkKeyword(1, 3, "lse", TOKEN_ELSE);
         case 'g': return checkKeyword(1, 5, "lobal", TOKEN_GVAR);
         case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
         case 'n': return checkKeyword(1, 2, "il", TOKEN_NIL);
@@ -133,6 +132,13 @@ static TokenType identifierType(){
         case 'w': return checkKeyword(1, 4, "hile", TOKEN_WHILE);
 
         // Multiple keywords
+        case 'e':
+            if (scanner.current - scanner.start>1){
+                switch (scanner.start[1]){
+                    case 'n':return checkKeyword(2,1,"d", TOKEN_END);
+                    case 'l':return checkKeyword(2,2,"se", TOKEN_ELSE);
+                }
+            }
         case 'f':
             if (scanner.current - scanner.start>1){
                 switch (scanner.start[1]){
@@ -203,19 +209,12 @@ Token scanToken(){
         case '+': return makeToken(TOKEN_PLUS);
         case '/': return makeToken(TOKEN_SLASH);
         case '*': return makeToken(TOKEN_STAR);
-        case '!':
-            return makeToken(
-                match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
-        case '=':
-            return makeToken(
-                match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
-        case '<':
-            return makeToken(
-                match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
-        case '>':
-            return makeToken(
-                match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
-        case '"':return string(false, '"');
+        case ':': return makeToken(match('>') ? TOKEN_BSTART : TOKEN_COLON);
+        case '!': return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+        case '=': return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+        case '<': return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+        case '>': return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+        case '"': return string(false, '"');
         case '\'': return string(false, '\'');
     }
 

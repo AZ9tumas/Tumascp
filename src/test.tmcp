@@ -1,14 +1,330 @@
-global a = 12
-global b = 14
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
 
-global c = 34
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
 
-print a + b + c
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
 
-global space = " "
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
 
-global first = "my" + space + "lang"
-global second = 'is' + space + 'ready'
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
 
-print first + space + second
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
+
+var a = 12
+var b = 13
+print a + b
+print b == a + 1
 
