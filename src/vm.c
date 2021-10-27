@@ -143,10 +143,7 @@ static InterpretResult run() {
 
             case OP_CONSTANT_LONG:
                 // do something
-                Value constant = READ_CONSTANT();
-                
-                // constant part 1:
-                //push()
+                // Value constant = READ_CONSTANT();
 
 
             case OP_NEGATE:
