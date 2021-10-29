@@ -2,11 +2,13 @@ var a = 12
 var b = 8
 print a + b
 
-if a + b == 20 then
+if a + b == 20 {
 	print "a + b is..."
 	print a + b
-else:
+}
+else {
 	print "if test failed"
-end
+}
 
-if 1 == 1 then print"1=1"
+
+print "hello, " + "this is the end of the program"

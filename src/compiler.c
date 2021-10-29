@@ -126,6 +126,16 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
     emitByte(byte2);
 }
 
+static void emitLoop(int loopStart) {
+    emitByte(OP_LOOP);
+
+    int offset = currentChunk()->count - loopStart + 2;
+    if (offset > UINT16_MAX) error("Loop body too large.");
+
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
+}
+
 static int emitJump(uint8_t instruction) {
     emitByte(instruction);
     emitByte(0xff);
@@ -326,11 +336,11 @@ static void expression(){
 }
 
 static void block() {
-    while (!check(TOKEN_END) && !check(TOKEN_EOF)) {
+    while (!check(TOKEN_END) && !check(TOKEN_EOF) && !check(TOKEN_RIGHT_BRACE)) {
         declaration();
     }
 
-    consume(TOKEN_END, "Expect keyword 'end' after block.");
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after block of code.");
 }
 
 static void varDeclaration() {
@@ -357,9 +367,9 @@ static void expressionStatement() {
 }
 
 static void ifStatement() {
-    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+    //consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
     expression();
-    consume(TOKEN_RIGHT_PAREN, "Expect ')' after if statement condition.");
+    //consume(TOKEN_RIGHT_PAREN, "Expect ')' after if statement condition.");
 
     int thenJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
@@ -384,12 +394,12 @@ static void whileStatement() {
     int loopStart = currentChunk()->count;
     //consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
-    consume(TOKEN_COLON, "Expect ':' after condition.");
+    //consume(TOKEN_COLON, "Expect ':' after condition.");
 
     int exitJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
     statement();
-    //emitLoop(loopStart);
+    emitLoop(loopStart);
 
     patchJump(exitJump);
     emitByte(OP_POP);
@@ -431,19 +441,25 @@ static void declaration() {
     if (parser.panicMode) synchronize();
 }
 
-static void statement() {
-    if (match(TOKEN_PRINT)) {
+static void statement(){
+    if (match(TOKEN_PRINT)){
         printStatement();
-    } else if (match(TOKEN_IF)){
+    }
+    else if (match(TOKEN_IF)){
         ifStatement();
-    } else if (match(TOKEN_WHILE)) {
+    }
+    else if (match(TOKEN_WHILE)){
         whileStatement();
     }
-     else if (match(TOKEN_BSTART) || match(TOKEN_COLON)){
+    else if (match(TOKEN_LEFT_BRACE)){
         beginScope();
         block();
         endScope();
-    } else {
+    }
+    else if (rawMatch(TOKEN_RIGHT_BRACE)){
+        printf("right brace\n");
+    }
+    else {
         expressionStatement();
     }
 }
