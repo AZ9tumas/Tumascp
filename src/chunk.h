@@ -14,6 +14,7 @@ typedef enum {
     OP_CONSTANT,
     OP_CONSTANT_LONG,
     OP_JUMP_IF_FALSE,
+    OP_JUMP,
     OP_PRINT,
     OP_NEGATE,
     OP_ADD,
