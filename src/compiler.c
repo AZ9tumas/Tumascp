@@ -56,6 +56,14 @@ Parser parser;
 Compiler* current = NULL;
 Chunk* compilingChunk;
 
+bool islooping = false;
+int loopstart = 0;
+
+static void setLoopStatus(int loopstart, bool status){
+    islooping = status;
+    loopstart = loopstart;
+}
+
 static Chunk* currentChunk(){
     return compilingChunk;
 }
@@ -222,7 +230,8 @@ static int resolveLocal(Compiler* compiler, Token* name) {
         Local* local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) {
             if (local->depth == -1) {
-                error("Can't read local variable in its own initializer.");
+                //error("Can't read local variable in its own initializer.");
+                emitByte(OP_NIL);
             }
             return i;
         }
@@ -343,15 +352,20 @@ static void block() {
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after block of code.");
 }
 
-static void varDeclaration() {
+static void varDeclaration(bool islocalvarr) {
     bool islocalvar = match(TOKEN_VAR);
+    if (islocalvarr)islocalvar=true;
     uint8_t global = parseVariable("Expected variable name.", islocalvar);
     
     // When it's a local var, global = 0
 
     if (match(TOKEN_EQUAL)) {
         expression();
-    } else {
+    } else if (match(TOKEN_COMMA)){
+        //error("Multiple variable assigning isn't supported lmao, get nuubed XD");
+        varDeclaration(islocalvar);
+    }
+     else {
         emitByte(OP_NIL);
     }
     //consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
@@ -361,9 +375,94 @@ static void varDeclaration() {
 
 static void expressionStatement() {
     expression();
-    //consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
-    //if (parser.current.type == TOKEN_SEMICOLON)advance();
     emitByte(OP_POP);
+}
+
+static void variable(bool canAssign);
+
+static void emitAbLoop(int loopStart) {
+    emitByte(OP_ABS_JUMP);
+
+    int offset = currentChunk()->count - loopStart + 2;
+    if (offset > UINT16_MAX) error("Loop body too large.");
+
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
+}
+
+static void loopcontinue(){
+    
+    //emitByte(OP_POP);
+    //emitJump(OP_ABS_JUMP);
+    emitAbLoop(loopstart);
+
+    //patchJump(exitJump);
+    //emitByte(OP_POP);
+    //emitByte(loopstart);
+    printf("continue exit\n");
+
+}
+
+static void loopbreak(){
+
+}
+
+static void forStatement(){
+    islooping = true;
+    beginScope();
+    
+    char typee;
+    if (match(TOKEN_VAR)) {
+        varDeclaration(true);
+    } else {
+        statement();
+    }
+    consume(TOKEN_COMMA, "Expect ','");
+
+    /*
+        for var i = 0, i<=10, i=i+1 {
+            print(i)
+        }
+    */
+
+    int loopStart = currentChunk()->count;
+    int exitJump = -1;
+    
+    // Get condition
+    expression();
+
+    // Jump out of the loop if the condition is false.
+    exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP); // Condition.
+
+    /*
+        Syntax change:
+            for var i = 0, 10, i+=1 {
+                print(i)
+            }
+    */
+    
+    if (match(TOKEN_COMMA)) {
+        int bodyJump = emitJump(OP_JUMP);
+        int incrementStart = currentChunk()->count;
+        expression();
+        emitByte(OP_POP);
+        //consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        emitLoop(loopStart);
+        loopStart = incrementStart;
+        patchJump(bodyJump);
+    }
+
+    statement();
+    emitLoop(loopStart);
+
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP); // Condition.
+    }
+    endScope();
+    islooping = false;
 }
 
 static void ifStatement() {
@@ -392,6 +491,7 @@ static void printStatement() {
 
 static void whileStatement() {
     int loopStart = currentChunk()->count;
+    setLoopStatus(loopStart, true);
     //consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
     //consume(TOKEN_COLON, "Expect ':' after condition.");
@@ -403,6 +503,8 @@ static void whileStatement() {
 
     patchJump(exitJump);
     emitByte(OP_POP);
+    setLoopStatus(0, false);
+    printf("while loop exit\n");
 }
 
 static void synchronize() {
@@ -433,7 +535,7 @@ static void synchronize() {
 static void declaration() {
 
     if (match(TOKEN_GVAR) || rawMatch(TOKEN_VAR)){
-        varDeclaration();
+        varDeclaration(false);
     } else {
         statement();
     }
@@ -450,6 +552,19 @@ static void statement(){
     }
     else if (match(TOKEN_WHILE)){
         whileStatement();
+    }
+    else if (match(TOKEN_FOR)){
+        forStatement();
+    }
+    else if (match(TOKEN_BREAK)){
+        printf("came across break\n");
+        if (!islooping)error("Expect 'continue' and 'break' keywords only in loops");
+        loopcontinue();
+    }
+    else if (match(TOKEN_CONTINUE)){
+        printf("came across continue\n");
+        if (!islooping)error("Expect 'continue' and 'break' keywords only in loops");
+        loopbreak();
     }
     else if (match(TOKEN_LEFT_BRACE)){
         beginScope();

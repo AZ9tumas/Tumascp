@@ -204,20 +204,29 @@ static InterpretResult run() {
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
                 if (isFalsey(peek(0)))vm.ip += offset;
+                printf("OP_JUMP_IF_FALSE\n");
                 break;
             }
 
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
                 vm.ip += offset;
+                printf("OP_JUMP\n");
                 break;
             }
 
             case OP_LOOP: {
                 uint16_t offset = READ_SHORT();
                 vm.ip -= offset;
+                printf("OP_LOOP\n");
                 break;
             }
+
+            case OP_ABS_JUMP:
+                uint16_t offset = READ_SHORT();
+                vm.ip -= offset;
+                printf("OP_ABS_JUMP\n");
+                break;
 
             case OP_EQUAL: {
                 Value b = pop();

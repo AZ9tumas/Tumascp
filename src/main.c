@@ -1,6 +1,7 @@
 #include "common.h"
 #include "chunk.h"
 #include "debug.h"
+#include "time.h"
 #include "vm.h"
 
 #include <stdio.h>
@@ -9,6 +10,8 @@
 
 static void repl() {
     char line[1024];
+    printf("Tumascp: Version 0.1\tMade by-> AZ9tumas\n");
+    printf("Type .exit to Exit.\n");
     for (;;){
         printf(">>> ");
 
@@ -16,8 +19,18 @@ static void repl() {
             printf("\n");
             break;
         }
+        
+        if (line[0]=='.'&&line[1]=='e'&&line[2]=='x'&&line[3]=='i'&&line[4]=='t')return;
 
+        clock_t start_t = clock();
         interpret(line);
+        clock_t end_t = clock();
+
+        printf("%ld %ld\n", start_t, end_t);
+        
+        clock_t total_t = end_t - start_t;
+        total_t = (double)total_t;
+        printf("Execution time taken: %ld\n", total_t);
     }
 }
 
@@ -60,7 +73,6 @@ static void runFile(const char* path) {
 }
 
 int main(int argc, const char* argv[]){
-
     // Get the Virtual Machine ready!
     initVM();
 
@@ -73,5 +85,6 @@ int main(int argc, const char* argv[]){
         exit(64);
     }
     freeVM();
+    printf("Exit\n");
     return 0;
 }

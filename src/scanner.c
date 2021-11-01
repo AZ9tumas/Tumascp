@@ -57,7 +57,10 @@ static void skipWhiteToken(){
             case '/':
                 if (peekNext() == '/'){
                     // A comment goes until the end of the line
-                    while (peek() != '\n'&& !isAtEnd()) advance();
+                    while (peek() != '\n'&& !isAtEnd()) {
+                        advance();
+                    }
+                    advance();
                 } else {return;}
             default:return;
         }
@@ -119,7 +122,7 @@ static TokenType identifierType(){
     switch (scanner.start[0]) {
         // Straight keywords
         case 'a': return checkKeyword(1, 2, "nd", TOKEN_AND);
-        case 'c': return checkKeyword(1, 4, "lass", TOKEN_CLASS);
+        case 'b': return checkKeyword(1, 4, "reak", TOKEN_BREAK);
         case 'd': return checkKeyword(1, 2, "ef", TOKEN_FUNC);
         case 'g': return checkKeyword(1, 5, "lobal", TOKEN_GVAR);
         case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
@@ -132,6 +135,13 @@ static TokenType identifierType(){
         case 'w': return checkKeyword(1, 4, "hile", TOKEN_WHILE);
 
         // Multiple keywords
+        case 'c':
+            if (scanner.current - scanner.start>1){
+                switch (scanner.start[1]){
+                    case 'o':return checkKeyword(2,6,"ntinue", TOKEN_CONTINUE);
+                    case 'l':return checkKeyword(2,3,"ass", TOKEN_CLASS);
+                }
+            }
         case 'e':
             if (scanner.current - scanner.start>1){
                 switch (scanner.start[1]){

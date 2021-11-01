@@ -1,14 +1,6 @@
-var a = 12
-var b = 8
-print a + b
-
-if a + b == 20 {
-	print "a + b is..."
-	print a + b
+var b = 0
+while b<10 {
+    b = b + 1
+    continue
+    print b
 }
-else {
-	print "if test failed"
-}
-
-
-print "hello, " + "this is the end of the program"
