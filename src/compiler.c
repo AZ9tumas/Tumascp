@@ -59,9 +59,9 @@ Chunk* compilingChunk;
 bool islooping = false;
 int loopstart = 0;
 
-static void setLoopStatus(int loopstart, bool status){
+static void setLoopStatus(int loopstart_, bool status){
     islooping = status;
-    loopstart = loopstart;
+    loopstart = loopstart_;
 }
 
 static Chunk* currentChunk(){
@@ -381,6 +381,7 @@ static void expressionStatement() {
 static void variable(bool canAssign);
 
 static void emitAbLoop(int loopStart) {
+    printf("continue abs\n");
     emitByte(OP_ABS_JUMP);
 
     int offset = currentChunk()->count - loopStart + 2;
@@ -391,16 +392,7 @@ static void emitAbLoop(int loopStart) {
 }
 
 static void loopcontinue(){
-    
-    //emitByte(OP_POP);
-    //emitJump(OP_ABS_JUMP);
-    emitAbLoop(loopstart);
-
-    //patchJump(exitJump);
-    //emitByte(OP_POP);
-    //emitByte(loopstart);
-    printf("continue exit\n");
-
+    emitLoop(loopstart);
 }
 
 static void loopbreak(){
@@ -408,7 +400,6 @@ static void loopbreak(){
 }
 
 static void forStatement(){
-    islooping = true;
     beginScope();
     
     char typee;
@@ -426,6 +417,7 @@ static void forStatement(){
     */
 
     int loopStart = currentChunk()->count;
+    setLoopStatus(loopStart, true);
     int exitJump = -1;
     
     // Get condition
@@ -441,7 +433,6 @@ static void forStatement(){
                 print(i)
             }
     */
-    
     if (match(TOKEN_COMMA)) {
         int bodyJump = emitJump(OP_JUMP);
         int incrementStart = currentChunk()->count;
@@ -454,6 +445,9 @@ static void forStatement(){
         patchJump(bodyJump);
     }
 
+
+    setLoopStatus(loopStart, true);
+
     statement();
     emitLoop(loopStart);
 
@@ -462,7 +456,8 @@ static void forStatement(){
         emitByte(OP_POP); // Condition.
     }
     endScope();
-    islooping = false;
+    setLoopStatus(0, false);
+
 }
 
 static void ifStatement() {
@@ -559,12 +554,11 @@ static void statement(){
     else if (match(TOKEN_BREAK)){
         printf("came across break\n");
         if (!islooping)error("Expect 'continue' and 'break' keywords only in loops");
-        loopcontinue();
+        loopbreak();
     }
     else if (match(TOKEN_CONTINUE)){
-        printf("came across continue\n");
         if (!islooping)error("Expect 'continue' and 'break' keywords only in loops");
-        loopbreak();
+        loopcontinue();
     }
     else if (match(TOKEN_LEFT_BRACE)){
         beginScope();
