@@ -134,6 +134,10 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
     emitByte(byte2);
 }
 
+static void emitConsecutivePops(int times){
+    emitBytes(OP_POPC, (uint8_t)times);
+}
+
 static void emitLoop(int loopStart) {
     emitByte(OP_LOOP);
 
@@ -305,10 +309,13 @@ static void beginScope() {
 static void endScope() {
     current->scopeDepth--;
 
+    int totalcount = 0;
     while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
-        emitByte(OP_POP);
+        //emitByte(OP_POP);
         current->localCount--;
+        totalcount ++;
     }
+    emitConsecutivePops(totalcount);
 }
 
 static void binary(bool canAssign){
@@ -379,24 +386,12 @@ static void expressionStatement() {
 }
 
 static void variable(bool canAssign);
-
-static void emitAbLoop(int loopStart) {
-    printf("continue abs\n");
-    emitByte(OP_ABS_JUMP);
-
-    int offset = currentChunk()->count - loopStart + 2;
-    if (offset > UINT16_MAX) error("Loop body too large.");
-
-    emitByte((offset >> 8) & 0xff);
-    emitByte(offset & 0xff);
-}
-
 static void loopcontinue(){
     emitLoop(loopstart);
 }
 
 static void loopbreak(){
-
+    
 }
 
 static void forStatement(){

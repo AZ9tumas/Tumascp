@@ -110,6 +110,8 @@ static InterpretResult run() {
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 #define READ_SHORT() \
     (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8 | vm.ip[-1])))
+#define READ_SHORTER() \
+    (vm.ip += 1, (uint8_t)(vm.ip[-1]))
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) \
     do { \
@@ -160,6 +162,11 @@ static InterpretResult run() {
             case OP_TRUE: push(BOOL_VAL(true)); break;
             case OP_FALSE: push(BOOL_VAL(false)); break;
             case OP_POP: pop(); break;
+
+            case OP_POPC:
+                uint8_t times = READ_SHORTER();
+                for (int count = 0; count<times; count++)pop();
+                break;
 
             case OP_GET_GLOBAL: {
                 ObjString* name = READ_STRING();
@@ -218,11 +225,6 @@ static InterpretResult run() {
                 vm.ip -= offset;
                 break;
             }
-
-            case OP_ABS_JUMP:
-                uint16_t offset = READ_SHORT();
-                vm.ip -= offset;
-                break;
 
             case OP_EQUAL: {
                 Value b = pop();

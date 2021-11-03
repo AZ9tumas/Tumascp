@@ -21,6 +21,12 @@ static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset)
   return offset + 3;
 }
 
+static int consecutivePopInstruction(const char* name, int sign, Chunk* chunk, int offset){
+    uint8_t times = (uint8_t)chunk->code[offset+1];
+    printf("%-16s %4d\n", name, times);
+    return offset + 2;
+}
+
 static int constantInstruction(const char* name, Chunk* chunk, int offset){
     uint8_t constant = chunk->code[offset + 1];
     printf("%-16s %4d '", name, constant);
@@ -66,6 +72,8 @@ int disassembleInstruction(Chunk* chunk, int offset){
         return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
     case OP_LOOP:
         return jumpInstruction("OP_LOOP", -1, chunk, offset);
+    case OP_POPC:
+        return consecutivePopInstruction("OP_POPC", -1, chunk, offset);
     case OP_ABS_JUMP:
         return jumpInstruction("OP_ABS_JUMP", -1, chunk, offset);
     case OP_PRINT:

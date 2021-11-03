@@ -1,7 +1,15 @@
-for var a = 0, a<10, a=a+1 {
-    if a == 7{
-        print "a is 7"
-        continue
+var a = 0
+var b = 0
+
+for a = 0, a<10, a = a + 2 {
+    for b = 0, b < 2, b = b + 1 {
+        if b == 1 {
+            print "b is 1"
+            continue
+        }
+        print b
     }
     print a
 }
+
+print "over"
