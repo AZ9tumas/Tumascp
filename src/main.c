@@ -1,7 +1,6 @@
 #include "common.h"
 #include "chunk.h"
 #include "debug.h"
-#include "time.h"
 #include "vm.h"
 
 #include <stdio.h>
@@ -22,15 +21,7 @@ static void repl() {
         
         if (line[0]=='.'&&line[1]=='e'&&line[2]=='x'&&line[3]=='i'&&line[4]=='t')return;
 
-        clock_t start_t = clock();
         interpret(line);
-        clock_t end_t = clock();
-
-        printf("%ld %ld\n", start_t, end_t);
-        
-        clock_t total_t = end_t - start_t;
-        total_t = (double)total_t;
-        printf("Execution time taken: %ld\n", total_t);
     }
 }
 

@@ -1,15 +1,5 @@
-var a = 0
-var b = 0
-
-for a = 0, a<10, a = a + 2 {
-    for b = 0, b < 2, b = b + 1 {
-        if b == 1 {
-            print "b is 1"
-            continue
-        }
-        print b
-    }
-    print a
+def check(value){
+    return value == lmao()
 }
 
-print "over"
+print check(12)
