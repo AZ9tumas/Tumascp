@@ -4,6 +4,8 @@
 #include "compiler.h"
 #include "object.h"
 #include "memory.h"
+#include "global.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -47,64 +49,6 @@ static void defineNative(const char* name, NativeFn function) {
     pop();
 }
 
-/* 
-    clock -> returns a double value
-    lmao -> returns number value 69
-    int -> converts int / str / bool to int
-    str -> converts str / int / bool to str
-    bool -> converts str / int / bool to bool
-    
-*/
-
-int Error_Counter = 0;
-int realArgCount = 0;
-Value error;
-static Value reportError(int realArgCount_, int errCount){
-    error.type = VAL_ERROR;
-    Error_Counter = errCount;
-    realArgCount = realArgCount_;
-    return error;
-}
-
-static Value clockNative(int argCount, Value* args) {
-    int clockArgCount = 0;
-    if (argCount != clockArgCount)return reportError(clockArgCount, 1);
-    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
-}
-
-static Value lmao(int argCount, Value* args){
-    int clockArgCount = 0;
-    if (argCount != clockArgCount)return reportError(clockArgCount, 1);
-    return NUMBER_VAL(69);
-}
-
-
-static Value valint(int argCount, Value* args){
-    int clockArgCount = 1;
-    if (argCount != clockArgCount)return reportError(clockArgCount, 1);
-    Value convert = args[0];
-    
-    if (IS_OBJ(convert) && IS_STRING(convert)){
-        ObjString* string = AS_STRING(convert);
-        double result;
-        char* eptr;
-
-        result = strtod(string->chars, &eptr);
-        return NUMBER_VAL(result);
-    }
-    else if (IS_NUMBER(convert))return convert;
-    else if (IS_BOOL(convert))return NUMBER_VAL(convert.as.boolean?1:0);
-    
-}
-
-static Value valstr(int argCount, Value* args){
-    int clockArgCount = 1;
-    if (argCount != clockArgCount){
-        
-    }
-    
-}
-
 // New stack, start of VM
 void initVM(){
     resetStack();
@@ -112,10 +56,10 @@ void initVM(){
     initTable(&vm.globals);
     initTable(&vm.strings);
 
-    defineNative("clock", clockNative);
-    defineNative("lmao", lmao);
-    defineNative("int", valint);
-    defineNative("str", valstr);
+    defineNative("clock", tumascp_clock);
+    defineNative("int", tumascp_int);
+    defineNative("str", tumascp_str);
+    defineNative("input", tumascp_input);
 }
 
 void freeVM(){
@@ -165,7 +109,9 @@ static bool callValue(Value callee, int argCount){
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(argCount, vm.stackTop - argCount);
                 if (IS_ERROR(result)){
-
+                    int Error_Counter = getError_Counter();
+                    int realArgCount = getrealArgCount();
+                    
                     switch (Error_Counter)
                     {
                     case 1:
@@ -181,6 +127,10 @@ static bool callValue(Value callee, int argCount){
                         // Failed str conversion
                         runtimeError("Failed to convert to str");
                         break;
+
+                    case 4:
+                        // Failed in 'input' function
+                        runtimeError("Failed to get input.");
                     
                     default:
                         break;
@@ -220,8 +170,7 @@ static void mulString(bool swap){
     char* chars = ALLOCATE(char, length + 1);
     memcpy(chars, a->chars, a->length);
     
-    int i = 1;
-    for (i = 1; i<b; i++){
+    for (int i = 1; i<b; i++){
         memcpy(chars + (a->length * i), a->chars, a->length);
     }
     chars[length] = '\0';
@@ -274,7 +223,7 @@ static InterpretResult run() {
         } while (false)
 
     // Executing instructions
-    #ifndef DEBUG_TRACE_EXECUTION
+    #ifdef DEBUG_TRACE_EXECUTION
         printf("    ");
         for (Value* slot = vm.stack; slot < vm.stackTop; slot++){
             printf("[ ");

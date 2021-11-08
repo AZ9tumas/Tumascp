@@ -1,5 +1,21 @@
-def check(value){
-    return value == lmao()
-}
+while true {
+    
+    var number1 = int(input("Enter a number: "))
+    var number2 = int(input("Enter another number: "))
+    var op = input('Enter operator: ')
 
-print check(12)
+    if op == '+'{
+        print number1 + number2
+    }
+    else if op == '-' {
+        print number1 - number2
+    }
+    else if op == '/'{
+        print number1 / number2
+    }
+    else if op == '*'{
+        print number1 * number2
+    }
+    else print "Invalid Operator"
+
+}

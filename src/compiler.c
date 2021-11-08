@@ -585,7 +585,6 @@ static void whileStatement() {
     patchJump(exitJump);
     emitByte(OP_POP);
     setLoopStatus(0, false);
-    printf("while loop exit\n");
 }
 
 static void synchronize() {

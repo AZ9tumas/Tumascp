@@ -64,7 +64,6 @@ static void runFile(const char* path) {
 }
 
 int main(int argc, const char* argv[]){
-    // Get the Virtual Machine ready!
     initVM();
 
     if (argc == 1){
