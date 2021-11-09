@@ -1,0 +1,53 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Tumascp",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#reserved-words"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#letter"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.tmcp",
+				"match": "\\b(if|else|while|for|return|print|def|global|var|true|false|class|and|or|nil|break|continue|super|this)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.tmcp|string.quoted.single.tmcp",
+			"begin": "\"|'",
+			"end": "\"|'",
+			"patterns": [
+				{
+					"name": "constant.character.escape.tmcp",
+					"match": "\\\\."
+				}
+			]
+		},
+		"letter":{
+			"match": "([A-Za-z])",
+			"name":"entity.name.tag"
+		},
+		"numbers":{			
+			"match": "([0-9])",
+			"name":"support.other"
+		},
+		"reserved-words":{
+			"name":"entity.name.function.member.tmcp",
+			"match": "\\b(input|int|str|clock|bool|exit)\\b"
+		}
+	},
+	"scopeName": "source.tmcp"
+}
