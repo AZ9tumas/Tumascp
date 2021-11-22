@@ -1,10 +1,11 @@
 #include "common.h"
-#include "vm.h"
 #include "debug.h"
 #include "compiler.h"
 #include "object.h"
 #include "memory.h"
 #include "global.h"
+
+// Note: global.h contains vm.h
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +61,9 @@ void initVM(){
     defineNative("int", tumascp_int);
     defineNative("str", tumascp_str);
     defineNative("input", tumascp_input);
+    defineNative("bool", tumascp_bool);
+    defineNative("type", tumascp_type);
+    defineNative("print", tumascp_print);
 }
 
 void freeVM(){
@@ -74,6 +78,12 @@ void push (Value value) {
 }
 
 // Pop the recently pushed item into the stack
+
+Value popn(int n){
+    vm.stackTop-=n;
+    return *vm.stackTop;
+}
+
 Value pop(){
     vm.stackTop--;
     return *vm.stackTop;
@@ -107,7 +117,21 @@ static bool callValue(Value callee, int argCount){
                 return call(AS_FUNCTION(callee), argCount);
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
-                Value result = native(argCount, vm.stackTop - argCount);
+                Value* args = vm.stackTop - argCount;
+
+                printf("Current arg count: %d\n", argCount);
+
+                CallFrame* frame = &vm.frames[vm.frameCount - 1];
+                printf("    ");
+                for (Value* slot = vm.stack; slot < vm.stackTop; slot++){
+                    printf("[ ");
+                    printValue(*slot);
+                    printf(" ]");
+                }
+                printf("\n");
+                disassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code));
+
+                Value result = native(argCount, args);
                 if (IS_ERROR(result)){
                     int Error_Counter = getError_Counter();
                     int realArgCount = getrealArgCount();
@@ -148,10 +172,6 @@ static bool callValue(Value callee, int argCount){
     }
     runtimeError("Can only call functions and classes");
     return false;
-}
-
-static bool isFalsey(Value value) {
-    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
 static void mulString(bool swap){
@@ -275,7 +295,8 @@ static InterpretResult run() {
 
             case OP_POPC:
                 uint8_t times = READ_SHORTER();
-                for (int count = 0; count<times; count++)pop();
+                //for (int count = 0; count<times; count++)pop();
+                popn(times);
                 break;
 
             case OP_GET_GLOBAL: {

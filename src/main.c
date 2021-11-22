@@ -75,6 +75,5 @@ int main(int argc, const char* argv[]){
         exit(64);
     }
     freeVM();
-    printf("Exit\n");
     return 0;
 }

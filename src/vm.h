@@ -39,6 +39,7 @@ InterpretResult interpret(const char* source);
 
 // Stack funcs
 void push(Value value);
+Value popn(int n);
 Value pop();
 
 #endif
