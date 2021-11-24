@@ -9,8 +9,12 @@
 
 static void repl() {
     char line[1024];
-    printf("Tumascp: Version 0.1\tMade by-> AZ9tumas\n");
-    printf("Type .exit to Exit.\n");
+    printf("\n\t----------------------------------------\n");
+    printf("\t| ==== [ TUMASCP Version: 0.2.1 ] ==== |\n");
+    printf("\t----------------------------------------\n");
+    printf("\t          BUILT BY AZ9TUMAS\n\n\n");
+    printf("Tip: Use 'exit()' to exit the REPL\n\n");
+
     for (;;){
         printf(">>> ");
 
@@ -21,7 +25,10 @@ static void repl() {
         
         if (line[0]=='.'&&line[1]=='e'&&line[2]=='x'&&line[3]=='i'&&line[4]=='t')return;
 
-        interpret(line);
+        InterpretResult interpret_result =  interpret(line);
+        if (interpret_result == INTERPRET_EXIT)return;
+        printValue(pop());
+        
     }
 }
 

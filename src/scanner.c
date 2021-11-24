@@ -38,8 +38,9 @@ static bool isAlpha(char c){return (c>='a'&&c<='z')||(c>='A'&&c<='z')||c=='_';}
 static char peek(){return*scanner.current;}
 static bool isAtEnd(){return*scanner.current=='\0';}
 static char peekNext(){return isAtEnd()?'\0':scanner.current[1];}
+static TokenType checkKeyword(int start, int length, const char* rest, TokenType type){return scanner.current-scanner.start==start+length&&memcmp(scanner.start + start, rest, length)==0?type:TOKEN_IDENTIFIER;}
 static bool isDigit(char c){return c>='0'&&c<='9';}
-static TokenType checkKeyword(int start, int length, const char* rest, TokenType type) {return scanner.current-scanner.start==start+length&&memcmp(scanner.start + start, rest, length)==0?type:TOKEN_IDENTIFIER;}
+static bool isHexy(char c){return c>='a'&&c<='f';}
 
 static void skipWhiteToken(){
     for (;;) {
@@ -106,15 +107,26 @@ static TokenType Interpolation(){
     return TOKEN_INTERSTRING;
 }
 
-static Token number(){
-    while (isDigit(peek())) advance();
-    // look for decimals or fractions, etc
-    if (peek()=='.'&&isDigit(peekNext())){
-        //rm '.'
-        advance();
-        while(isDigit(peek()))advance();
-    }
+static Token number(bool val){
+    printf("number hex: %s\n", val?"true":"false");
     //printf("number: %s", scanner.start);
+    if (val){
+        advance(); // Skip the 'x' in '0x'
+        printf("char: %c, hexy: %s, peekNext: %c\n", peek(), isHexy(peek())?"true":"false", peekNext());
+        while (isDigit(peek())||isHexy(peek()))advance();
+        if (peek()=='.'&&(isDigit(peekNext())||isHexy(peekNext()))){
+            advance();
+            while (isDigit(peek())||isHexy(peek()))advance(); 
+        }
+    }else {
+        while (isDigit(peek())) advance();
+        // look for decimals or fractions, etc
+        if (peek()=='.'&&isDigit(peekNext())){
+            //rm '.'
+            advance();
+            while(isDigit(peek()))advance();
+        }
+    }
     return makeToken(TOKEN_NUMBER);
 }
 
@@ -128,9 +140,9 @@ static TokenType identifierType(){
         case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
         case 'n': return checkKeyword(1, 2, "il", TOKEN_NIL);
         case 'o': return checkKeyword(1, 1, "r", TOKEN_OR);
-        //case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);
+        case 'p': return checkKeyword(1, 2, "op", TOKEN_POP);
         case 'r': return checkKeyword(1, 5, "eturn", TOKEN_RETURN);
-        case 's': return checkKeyword(1, 4, "uper", TOKEN_SUPER);
+        case 's': return checkKeyword(1, 4, "tack", TOKEN_SHOW_STACK);
         case 'v': return checkKeyword(1, 2, "ar", TOKEN_VAR);
         case 'w': return checkKeyword(1, 4, "hile", TOKEN_WHILE);
 
@@ -212,8 +224,9 @@ Token scanToken(){
     if (isAtEnd()) return makeToken(TOKEN_EOF);
 
     char c = advance();
+    if (c == '0' && peek()=='x')return number(true);
     if (isAlpha(c))return identifier();
-    if (isDigit(c))return number();
+    if (isDigit(c))return number(false);
 
     switch (c) {
         case '(': return makeToken(TOKEN_LEFT_PAREN);

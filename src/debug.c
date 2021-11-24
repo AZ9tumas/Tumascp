@@ -56,6 +56,13 @@ int disassembleInstruction(Chunk* chunk, int offset){
     {
     case OP_POP:
         return simpleInstruction("OP_POP", offset);
+
+    // Debugging
+    case OP_INTENTIONAL_POP:
+        return simpleInstruction("OP_INTENTIONAL_POP", offset);
+    case OP_SHOW_STACK:
+        return simpleInstruction("OP_SHOW_STACK", offset);
+        
     case OP_GET_LOCAL:
         return byteInstruction("OP_GET_LOCAL", chunk, offset);
     case OP_SET_LOCAL:

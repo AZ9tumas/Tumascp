@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
 
 int Error_Counter = 0;
 int realArgCount = 0;
@@ -36,45 +37,40 @@ Value tumascp_int(int argCount, Value* args){
     int realarg = 1;
     if (argCount != realarg)return reportError(realarg, 1);
     Value convert = args[0];
-    
     if (IS_OBJ(convert) && IS_STRING(convert)){
-        ObjString* string = AS_STRING(convert);
-
-        int count = 0;
-        for (;;){
-            if (string->chars[count] == '\0')break;
-            if (!isDigit(string->chars[count]))return reportError(realarg, 2);
-            count++;
-        }
-
-        double result;
-        char* eptr;
-
-        result = strtod(string->chars, &eptr);
-        return NUMBER_VAL(result);
+        long double result;
+        char* endPointer;
+        result = strtod(AS_STRING(convert)->chars, &endPointer);
+        if (*endPointer == '\0')return NUMBER_VAL(result);
+        return NIL_VAL;
     }
     else if (IS_NUMBER(convert))return convert;
     else if (IS_BOOL(convert))return NUMBER_VAL(convert.as.boolean?1:0);
     return NIL_VAL;
 }
 
+static int getDigits(long double number){
+    int digits = 0;
+    while (number != 0){
+        number = trunc(number);
+        digits++;
+    }
+    return digits;
+}
+
 Value tumascp_str(int argCount, Value* args){
     int realarg = 1;
     if (argCount != realarg)return reportError(realarg, 1);
     Value convert = args[0];
-
     if (IS_NUMBER(convert)){
-        double nd = AS_NUMBER(convert);
-        int ni = (int)nd;
-        
-        int allocateSize = (int)sizeof(nd);
-        printf("helo %f %d %d\n", nd, ni, (int)sizeof(nd));
-        char final[allocateSize];
-        if (ni==nd){
-            sprintf(final, "%d", ni);
-        }else sprintf(final, "%f", nd);
-        printf("s:%d\n",sizeof(final));
-        return OBJ_VAL(copyString(final, sizeof(final)));
+        char final[1024];
+        snprintf(final, 1024, "%g", AS_NUMBER(convert));
+        int len = 0;
+        for (int i = 0; i<1000; i++){
+            if (final[i] == '\0'||final[i]==-1)break;
+            len++;
+        }
+        return OBJ_VAL(copyString(final, len));
     } else if (IS_OBJ(convert)){
         if (IS_STRING(convert))return convert;
         else if (IS_FUNCTION(convert)){
@@ -86,7 +82,7 @@ Value tumascp_str(int argCount, Value* args){
         if (isFalsey(convert))return OBJ_VAL(copyString("true",5));
         else return OBJ_VAL(copyString("false",6));
     } else if (IS_NIL(convert))return OBJ_VAL(copyString("nil", 4));
-    return reportError(realarg, 3);
+    return NIL_VAL;
 }
 
 Value tumascp_print(int argCount, Value* args){

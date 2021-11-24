@@ -5,6 +5,10 @@
 #include "value.h"
 
 typedef enum {
+    // Debugging
+    OP_SHOW_STACK,
+    OP_INTENTIONAL_POP,
+    
     OP_RETURN,
     OP_GET_GLOBAL,
     OP_SET_GLOBAL,

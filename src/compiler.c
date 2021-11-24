@@ -281,7 +281,7 @@ static void declareVariable(bool localvar) {
     if (current->scopeDepth == 0 && !localvar) return;
 
     Token* name = &parser.previous;
-    addLocal(*name);
+    addLocal(parser.previous);
 }
 
 static uint8_t parseVariable(const char* errorMessage, bool localvar) {
@@ -438,8 +438,8 @@ static void funcDeclaration() {
 }
 
 static void varDeclaration(bool islocalvarr) {
-    bool islocalvar = match(TOKEN_VAR);
-    if (islocalvarr)islocalvar=true;
+    bool islocalvar = match(TOKEN_VAR)||islocalvarr;
+    //if (islocalvarr)islocalvar=true;
     uint8_t global = parseVariable("Expected variable name.", islocalvar);
     
     // When it's a local var, global = 0
@@ -629,6 +629,12 @@ static void declaration() {
 static void statement(){
     if (match(TOKEN_PRINT)){
         printStatement();
+    }
+    else if (match(TOKEN_POP)){
+        emitByte(OP_INTENTIONAL_POP);
+    }
+    else if (match(TOKEN_SHOW_STACK)){
+        emitByte(OP_SHOW_STACK);
     }
     else if (match(TOKEN_IF)){
         ifStatement();
