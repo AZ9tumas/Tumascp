@@ -10,4 +10,4 @@ Use the following commands in order to start scripting in tumascp:
 
 Running Files -> `./tumascp file_name`
 
-**PROJECT UNDER DEVELOPMENT, EXPECT BUGS!!!**
+## _PROJECT UNDER DEVELOPMENT_
