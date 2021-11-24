@@ -1,7 +1,7 @@
 # Tumascp
 # NOTES:
-- 1. MakeFile works only on Linux.
-- 2. This version of Tumascp required (GCC) 11.1.0
+- MakeFile works only on Linux.
+- This version of Tumascp requires **(GCC) 11.1.0**
 
 # Making the Binary Executable
 Use the following commands in order to start scripting in tumascp:
