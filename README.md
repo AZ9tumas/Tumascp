@@ -1,11 +1,13 @@
 # Tumascp
-This is my own programming language.
-Btw, Makefile works only on linux.
+**NOTES:
+**1. MakeFile works only on Linux.
+**2. This version of Tumascp required (GCC) 11.1.0
 
+# Making the Binary Executable
 Use the following commands in order to start scripting in tumascp:
 1. `make`
 2. `./tumascp`
 
-For executing a file, do `./tumascp file_name`
+Running Files -> `./tumascp file_name`
 
-This project is under development, syntax and grammar will be shared when done.
+**PROJECT UNDER DEVELOPMENT, EXPECT BUGS!!!
