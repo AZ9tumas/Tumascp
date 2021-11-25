@@ -22,13 +22,9 @@ static void repl() {
             printf("\n");
             break;
         }
-        
-        if (line[0]=='.'&&line[1]=='e'&&line[2]=='x'&&line[3]=='i'&&line[4]=='t')return;
 
-        InterpretResult interpret_result =  interpret(line);
+        InterpretResult interpret_result =  interpret(line, true);
         if (interpret_result == INTERPRET_EXIT)return;
-        printValue(pop());
-        
     }
 }
 
@@ -63,9 +59,10 @@ static char* readFile(const char* path) {
 
 static void runFile(const char* path) {
     char* source = readFile(path);
-    InterpretResult result = interpret(source);
+    InterpretResult result = interpret(source, false);
     free(source); 
 
+    if (result == INTERPRET_EXIT) exit(60);
     if (result == INTERPRET_COMPILE_ERROR) exit(65);
     if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }

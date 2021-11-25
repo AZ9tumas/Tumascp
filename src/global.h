@@ -18,5 +18,6 @@ Value tumascp_bool(int argCount, Value* args);
 Value tumascp_clock(int argCount, Value* args);
 Value tumascp_input(int argCount, Value* args);
 Value tumascp_type(int argCount, Value* args);
+Value tumascp_exit(int argCount, Value* args);
 
 #endif

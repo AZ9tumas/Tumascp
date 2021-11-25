@@ -147,3 +147,12 @@ Value tumascp_input(int argCount, Value* args){
     return OBJ_VAL(inputline);
     
 }
+
+Value tumascp_exit(int argCount, Value* args){
+    int realarg = 0;
+    if (argCount != realarg)return reportError(realarg, 1);
+
+    Value tmcp_exit;
+    tmcp_exit.type = VAL_EXIT;
+    return tmcp_exit;
+}

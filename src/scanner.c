@@ -108,11 +108,9 @@ static TokenType Interpolation(){
 }
 
 static Token number(bool val){
-    printf("number hex: %s\n", val?"true":"false");
     //printf("number: %s", scanner.start);
     if (val){
         advance(); // Skip the 'x' in '0x'
-        printf("char: %c, hexy: %s, peekNext: %c\n", peek(), isHexy(peek())?"true":"false", peekNext());
         while (isDigit(peek())||isHexy(peek()))advance();
         if (peek()=='.'&&(isDigit(peekNext())||isHexy(peekNext()))){
             advance();
