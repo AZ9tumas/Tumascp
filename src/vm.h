@@ -27,7 +27,8 @@ typedef struct {
 typedef enum {
     INTERPRET_OK,
     INTERPRET_COMPILE_ERROR,
-    INTERPRET_RUNTIME_ERROR
+    INTERPRET_RUNTIME_ERROR,
+    INTERPRET_EXIT
 } InterpretResult;
 
 extern VM vm;
@@ -35,7 +36,7 @@ extern VM vm;
 // Imp VM functions
 void initVM();
 void freeVM();
-InterpretResult interpret(const char* source);
+InterpretResult interpret(const char* source, bool repl);
 
 // Stack funcs
 void push(Value value);
