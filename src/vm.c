@@ -64,6 +64,7 @@ void initVM(){
     defineNative("bool", tumascp_bool);
     defineNative("type", tumascp_type);
     defineNative("print", tumascp_print);
+    defineNative("exit", tumascp_exit);
 }
 
 void freeVM(){
@@ -119,9 +120,7 @@ static bool callValue(Value callee, int argCount){
                 NativeFn native = AS_NATIVE(callee);
                 Value* args = vm.stackTop - argCount;
 
-                printf("Current arg count: %d\n", argCount);
-
-                CallFrame* frame = &vm.frames[vm.frameCount - 1];
+                /*CallFrame* frame = &vm.frames[vm.frameCount - 1];
                 printf("    ");
                 for (Value* slot = vm.stack; slot < vm.stackTop; slot++){
                     printf("[ ");
@@ -129,7 +128,7 @@ static bool callValue(Value callee, int argCount){
                     printf(" ]");
                 }
                 printf("\n");
-                disassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code));
+                disassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code));*/
 
                 Value result = native(argCount, args);
                 if (IS_ERROR(result)){
@@ -166,11 +165,23 @@ static bool callValue(Value callee, int argCount){
                 push(result);
                 return true;
             }
+
+            case OBJ_STRING: {
+                runtimeError("'String' object cannot be called");
+                return false;
+            }
             default:
                 break; // Invalid object-type call
         }
     }
-    runtimeError("Can only call functions and classes");
+    if (IS_NIL(callee)){
+        runtimeError("'nil' object cannot be called");
+    } else if (IS_NUMBER(callee)){
+        runtimeError("'int' objects cannot be called");
+    }
+     else {
+        runtimeError("Can only call functions and classes");
+    }
     return false;
 }
 
@@ -213,7 +224,7 @@ static void concatenate() {
     push(OBJ_VAL(result));
 }
 
-static InterpretResult run() {
+static InterpretResult run(bool repl) {
 
     CallFrame* frame = &vm.frames[vm.frameCount - 1];
 
@@ -274,39 +285,37 @@ static InterpretResult run() {
                 int argCount = READ_BYTE();
                 if (!callValue(peek(argCount), argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
-                }
+                } else if (IS_EXIT(peek(0)))return INTERPRET_EXIT;
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
             }
 
 
-            case OP_NEGATE:
+            case OP_NEGATE: {
                 if (!IS_NUMBER(peek(0))){
                     runtimeError("Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
                 break;
+            }
             
             case OP_NIL: push(NIL_VAL); break;
             case OP_TRUE: push(BOOL_VAL(true)); break;
             case OP_FALSE: push(BOOL_VAL(false)); break;
             case OP_POP: pop(); break;
 
-            case OP_POPC:
+            case OP_POPC: {
                 uint8_t times = READ_SHORTER();
                 //for (int count = 0; count<times; count++)pop();
                 popn(times);
                 break;
+            }
 
             case OP_GET_GLOBAL: {
                 ObjString* name = READ_STRING();
                 Value value;
-                if (!tableGet(&vm.globals, name, &value)) {
-                    runtimeError("Undefined variable '%s'.", name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-                push(value);
+                push(!tableGet(&vm.globals, name, &value)?NIL_VAL:value);
                 break;
             }
 
@@ -363,6 +372,24 @@ static InterpretResult run() {
                 push(BOOL_VAL(valuesEqual(a, b)));
                 break;
             }
+
+            // Debugging
+
+            case OP_INTENTIONAL_POP: {
+                Value last = pop();
+                printValue(last);
+            }
+
+            case OP_SHOW_STACK: {
+                printf("    ");
+                for (Value* slot = vm.stack; slot < vm.stackTop; slot++){
+                    printf("[ ");
+                    printValue(*slot);
+                    printf(" ]");
+                }
+                printf("\n");
+            }
+
 
             case OP_GREATER:  BINARY_OP(BOOL_VAL, >); break;
             case OP_LESS:     BINARY_OP(BOOL_VAL, <); break;
@@ -427,6 +454,14 @@ static InterpretResult run() {
         default:
             return INTERPRET_RUNTIME_ERROR;
         }
+        
+        // REPL Only
+        /*if (repl && vm.frameCount - 1 == 0 && instruction != OP_NIL){
+            if (!(IS_FUNCTION(peek(0))&&AS_FUNCTION(peek(0))->arity == 0)){
+                printValue(peek(0));
+                printf("\n");
+            }
+        }*/
     }
     #undef READ_BYTE
     #undef READ_CONSTANT
@@ -435,12 +470,12 @@ static InterpretResult run() {
     #undef READ_SHORT
 }
 
-InterpretResult interpret(const char* source){
+InterpretResult interpret(const char* source, bool repl){
     ObjFunction* function = compile(source);
     if (function == NULL) return INTERPRET_COMPILE_ERROR;
 
     push(OBJ_VAL(function));
     call(function, 0);
 
-    return run();
+    return run(true);
 }
