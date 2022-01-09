@@ -1,4 +1,5 @@
 #include "global.h"
+#include "value.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -124,7 +125,8 @@ Value tumascp_type(int argCount, Value* args){
     else if (IS_NATIVE(convert))return OBJ_VAL(copyString("native", 7));
     else if (IS_STRING(convert))return OBJ_VAL(copyString("string", 7));
     else if (IS_BOOL(convert))return OBJ_VAL(copyString("bool", 5));
-    else if (IS_NIL(convert))return OBJ_VAL(copyString("nil", 4));
+    printf("Couldn't get type\n");
+    return OBJ_VAL(copyString("nil", 4));
 }
 
 Value tumascp_input(int argCount, Value* args){
@@ -155,4 +157,8 @@ Value tumascp_exit(int argCount, Value* args){
     Value tmcp_exit;
     tmcp_exit.type = VAL_EXIT;
     return tmcp_exit;
+}
+
+Value tumascp_time(int argCount, Value *args){
+    return NUMBER_VAL(0);
 }
