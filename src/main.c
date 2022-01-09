@@ -32,7 +32,9 @@ static char* readFile(const char* path) {
     FILE* file = fopen(path, "rb");
 
     if (file == NULL) {
-        fprintf(stderr, "Could not open file \"%s \".\n", path);
+        fprintf(stderr, "Could not open file \"%s\".\n", path);
+        char* nothing = (char*)malloc(8);
+        return nothing;
     }
 
     fseek(file, 0L, SEEK_END);
@@ -59,6 +61,11 @@ static char* readFile(const char* path) {
 
 static void runFile(const char* path) {
     char* source = readFile(path);
+    if (strcmp(source, "")==true){
+        free(source);
+        printf("Empty file.\n");
+        exit(60);
+    }
     InterpretResult result = interpret(source, false);
     free(source); 
 
