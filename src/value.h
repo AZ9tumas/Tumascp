@@ -11,6 +11,7 @@ typedef enum {
     VAL_NIL,
     VAL_NUMBER,
     VAL_ERROR,
+    VAL_EXIT,
     VAL_OBJ
 } ValueType;
 
@@ -28,6 +29,7 @@ typedef struct {
 #define IS_NUMBER(value)  ((value).type == VAL_NUMBER)
 #define IS_OBJ(value)     ((value).type == VAL_OBJ)
 #define IS_ERROR(value)   ((value).type == VAL_ERROR)
+#define IS_EXIT(value)    ((value).type == VAL_EXIT)
 
 #define AS_OBJ(value)     ((value).as.obj)
 #define AS_BOOL(value)    ((value).as.boolean)
