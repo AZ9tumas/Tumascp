@@ -1,7 +1,9 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "chunk.h"
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
@@ -44,7 +46,13 @@ typedef struct {
 typedef struct {
     Token name;
     int depth;
+    bool isCaptured;
 } Local;
+
+typedef struct {
+    uint8_t index;
+    bool isLocal;
+} Upvalue;
 
 typedef enum {
     TYPE_FUNCTION,
@@ -58,6 +66,7 @@ typedef struct Compiler {
 
     Local locals[UINT8_COUNT];
     int localCount;
+    Upvalue upvalues[UINT8_COUNT];
     int scopeDepth;
 } Compiler;
 
@@ -215,6 +224,8 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
 
     Local* local = &current->locals[current->localCount++];
     local->depth = 0;
+    local->isCaptured = false;
+    local->isCaptured = false;
     local->name.start = "";
     local->name.length = 0;
 }
@@ -265,6 +276,43 @@ static int resolveLocal(Compiler* compiler, Token* name) {
     return -1;
 }
 
+static int addUpvalue(Compiler* compiler, uint8_t index, bool isLocal) {
+    int upvalueCount = compiler->function->upvalueCount;
+
+    for (int i = 0; i < upvalueCount; i++) {
+        Upvalue* upvalue = &compiler->upvalues[i];
+        if (upvalue->index == index && upvalue->isLocal == isLocal) {
+            return i;
+        }
+    }
+
+    if (upvalueCount >= UINT8_COUNT) {
+        error("Too many closure variables in function.");
+        return 0;
+    }
+
+    compiler->upvalues[upvalueCount].isLocal = isLocal;
+    compiler->upvalues[upvalueCount].index = index;
+    return compiler->function->upvalueCount++;
+}
+
+static int resolveUpvalue(Compiler* compiler, Token* name) {
+    if (compiler->enclosing == NULL) return -1;
+
+    int local = resolveLocal(compiler->enclosing, name);
+    if (local != -1) {
+        compiler->enclosing->locals[local].isCaptured = true;
+        return addUpvalue(compiler, (uint8_t)local, true);
+    }
+
+    int upvalue = resolveUpvalue(compiler->enclosing, name);
+    if (upvalue != -1) {
+        return addUpvalue(compiler, (uint8_t)upvalue, false);
+    }
+
+    return -1;
+}
+
 static void addLocal(Token name) {
 
     if (current->localCount == UINT8_COUNT) {
@@ -275,32 +323,33 @@ static void addLocal(Token name) {
     Local* local = &current->locals[current->localCount++];
     local->name = name;
     local->depth = -1;
+    local->isCaptured = false;
 }
 
-static void declareVariable(bool localvar) {
-    if (current->scopeDepth == 0 && !localvar) return;
+static void declareVariable() {
+    if (current->scopeDepth == 0) return;
 
     Token* name = &parser.previous;
     addLocal(parser.previous);
 }
 
-static uint8_t parseVariable(const char* errorMessage, bool localvar) {
+static uint8_t parseVariable(const char* errorMessage) {
     consume(TOKEN_IDENTIFIER, errorMessage);
     
-    declareVariable(localvar);
-    if (current->scopeDepth > 0 || localvar)return 0;
+    declareVariable();
+    if (current->scopeDepth > 0)return 0;
     return identifierConstant(&parser.previous);
 }
 
-static void markInitialized(bool islocalvar) {
-    if (current->scopeDepth == 0 &&!islocalvar)return;
+static void markInitialized() {
+    if (current->scopeDepth == 0)return;
     current->locals[current->localCount - 1].depth = current->scopeDepth;
 }
 
-static void defineVariable(uint8_t global, bool islocalvar) {
+static void defineVariable(uint8_t global) {
 
-    if (current->scopeDepth>0 || islocalvar){
-        markInitialized(islocalvar);
+    if (current->scopeDepth>0){
+        markInitialized();
         return;
     }
     emitBytes(OP_DEFINE_GLOBAL, global);
@@ -354,6 +403,8 @@ static void endScope() {
     int totalcount = 0;
     while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
         //emitByte(OP_POP);
+        if (current->locals[current->localCount - 1].isCaptured)emitByte(OP_CLOSE_UPVALUE);
+
         current->localCount--;
         totalcount ++;
     }
@@ -417,8 +468,8 @@ static void function(FunctionType type){
             if (current->function->arity > 255){
                 errorAtCurrent("Can't have more than 255 parameters.");
             }
-            uint8_t constant = parseVariable("Expected parameter name", true);
-            defineVariable(constant, true);
+            uint8_t constant = parseVariable("Expected parameter name");
+            defineVariable(constant);
         } while (match(TOKEN_COMMA));
         
     }
@@ -426,36 +477,32 @@ static void function(FunctionType type){
     consume(TOKEN_LEFT_BRACE, "Expected '{' to start function body.");
     block();
     ObjFunction* Function = endCompiler();
-    emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(Function)));
+    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(Function)));
 
+    for (int i = 0; i < Function->upvalueCount; i++) {
+        emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+        emitByte(compiler.upvalues[i].index);
+    }
 }
 
 static void funcDeclaration() {
-    uint8_t global = parseVariable("Expect function name.", false);
-    markInitialized(false);
+    uint8_t global = parseVariable("Expect function name.");
+    markInitialized();
     function(TYPE_FUNCTION);
-    defineVariable(global, false);
+    defineVariable(global);
 }
 
-static void varDeclaration(bool islocalvarr) {
-    bool islocalvar = match(TOKEN_VAR)||islocalvarr;
-    //if (islocalvarr)islocalvar=true;
-    uint8_t global = parseVariable("Expected variable name.", islocalvar);
+static void varDeclaration() {
+    uint8_t global = parseVariable("Expected variable name.");
     
-    // When it's a local var, global = 0
-
     if (match(TOKEN_EQUAL)) {
         expression();
     } else if (match(TOKEN_COMMA)){
-        //error("Multiple variable assigning isn't supported lmao, get nuubed XD");
-        varDeclaration(islocalvar);
-    }
-     else {
+        error("Cannot assign multiple variables together. This feature will be added soon.");
+    }else {
         emitByte(OP_NIL);
     }
-    //consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
-
-    defineVariable(global, islocalvar);
+    defineVariable(global);
 }
 
 static void expressionStatement() {
@@ -477,7 +524,7 @@ static void forStatement(){
     
     char typee;
     if (match(TOKEN_VAR)) {
-        varDeclaration(true);
+        varDeclaration();
     } else {
         statement();
     }
@@ -561,7 +608,6 @@ static void returnStatement(){
     if (current->type == TYPE_SCRIPT) {
         error("return used outside function.");
     }
-    printf("TOKEN_EOF = %s\n", parser.current.type==TOKEN_EOF ? "true" : "false");
     if (rawMatch(TOKEN_EOF) || rawMatch(TOKEN_RIGHT_BRACE)){
         emitReturn();
     } else {
@@ -614,12 +660,11 @@ static void synchronize() {
 
 static void declaration() {
 
-    if (match(TOKEN_GVAR) || rawMatch(TOKEN_VAR)){
-        varDeclaration(false);
+    if (match(TOKEN_GVAR) || match(TOKEN_VAR)){
+        varDeclaration();
     } else if (match(TOKEN_FUNC)){
         funcDeclaration();
-    }
-     else {
+    }else {
         statement();
     }
 
@@ -629,12 +674,6 @@ static void declaration() {
 static void statement(){
     if (match(TOKEN_PRINT)){
         printStatement();
-    }
-    else if (match(TOKEN_POP)){
-        emitByte(OP_INTENTIONAL_POP);
-    }
-    else if (match(TOKEN_SHOW_STACK)){
-        emitByte(OP_SHOW_STACK);
     }
     else if (match(TOKEN_IF)){
         ifStatement();
@@ -718,7 +757,10 @@ static void namedVariable(Token name, bool canAssign) {
     if (arg != -1) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
-    } else {
+    }else if ((arg = resolveUpvalue(current, &name)) != -1) {
+        getOp = OP_GET_UPVALUE;
+        setOp = OP_SET_UPVALUE;
+    }else {
         arg = identifierConstant(&name);
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
